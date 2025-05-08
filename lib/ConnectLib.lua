@@ -1,17 +1,10 @@
+local ConnectionLibraryMetatable = {}
+
 local ConnectionLibrary = {}
-ConnectionLibrary.__index = ConnectionLibrary
 
-ConnectionLibrary.__index = function(Table, Index)
-    if Table == ConnectionLibrary then return end
+ConnectionLibraryMetatable.__index = ConnectionLibrary
 
-    local ReturnValue = rawget(Table, Index)
-
-    if not ReturnValue then ReturnValue = rawget(ConnectionLibrary, Index) end
-
-    return ReturnValue
-end
-
-ConnectionLibrary.__call = function(Table, ...)
+ConnectionLibraryMetatable.__call = function(Table, ...)
     local EventFunctions = rawget(Table, "connectedEventFunctions")
 
     if not (EventFunctions and type(EventFunctions) == "table") then return end
@@ -23,22 +16,22 @@ ConnectionLibrary.__call = function(Table, ...)
     end
 end
 
-function ConnectionLibrary.Connect(Table, Function)
-    if type(Table) ~= "table" or Table == ConnectionLibrary then return end
+function ConnectionLibrary:Connect(Function)
+    if self == ConnectionLibrary or self == ConnectionLibraryMetatable then return end
     
-    local EventFunctions = rawget(Table, "connectedEventFunctions")
+    local EventFunctions = rawget(self, "connectedEventFunctions")
     if not EventFunctions then EventFunctions = {} end
 
     EventFunctions[tostring(Function)] = Function
 
-    rawset(Table, "connectedEventFunctions", EventFunctions)
+    rawset(self, "connectedEventFunctions", EventFunctions)
 
     local ConnectionInformation = {
         Function = tostring(Function),
         Disonnect = function(ConnectionInformation)
             if not (ConnectionInformation and type(ConnectionInformation) == "table" and ConnectionInformation.Function) then return end
             
-            local LocalEventFunctions = rawget(Table, "connectedEventFunctions")
+            local LocalEventFunctions = rawget(self, "connectedEventFunctions")
             
             if LocalEventFunctions then
                 LocalEventFunctions[ConnectionInformation.Function] = nil
@@ -53,10 +46,10 @@ function ConnectionLibrary.Connect(Table, Function)
     return ConnectionInformation
 end
 
-function ConnectionLibrary.GetConnections(Table)
-    if type(Table) ~= "table" or Table == ConnectionLibrary then return end
+function ConnectionLibrary:GetConnections()
+    if self == ConnectionLibrary or self == ConnectionLibraryMetatable then return end
     
-    return rawget(Table, "connectedEventFunctions")
+    return rawget(self, "connectedEventFunctions")
 end
 
-return setmetatable({}, ConnectionLibrary)
+return ConnectionLibraryMetatable

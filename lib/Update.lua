@@ -7,12 +7,12 @@ Update.PreRender = setmetatable({}, ConnectLib)
 Update.RenderStepped = setmetatable({}, ConnectLib)
 Update.Draw = setmetatable({}, ConnectLib)
 
-love.Update = function(dt)
+love.update = function(dt)
     Update.PreRender(dt)
     Update.RenderStepped(dt)
 end
 
-love.Draw = function()
+love.draw = function()
     Update.Draw()
 end
 
