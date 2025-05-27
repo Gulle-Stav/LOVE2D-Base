@@ -9,10 +9,6 @@ local NAME_CHECK = {
 
 local Config = {}
 Config.__index = Config
-Config.__newindex = function (Table, Index, Value)
-    print(Table, Index, Value)
-    rawset(Table, Index, Value)
-end
 
 function Config:GetConfig()
     if self.File then return self.File end
@@ -30,22 +26,48 @@ function Config:GetConfig()
 end
 
 function Config:LoadConfig()
-    if not self.FileName then
-        self.FileName = self:GetConfig()
-    end
+    assert(self.FileName, "No File Name!")
 
-    local ConfigFile = io.open(self.FileName, "r")
+    local ConfigFile = io.open(self.FileName, "r+")
 
     if ConfigFile then
-        io.input(ConfigFile)
-        local ConfigText = io.read("a")
+        local ConfigText = ConfigFile:read("a")
 
         for line in ConfigText:gmatch("[^%c]+%c?") do
             local lineNoBr = line:gsub("\n", "")
             local sepStart = lineNoBr:find("=")
 
             local index, value = lineNoBr:sub(0, sepStart-1):gsub("[%s]", ""), lineNoBr:sub(sepStart+1, #lineNoBr):gsub("[%s]", "")
-            self.Config(index, self:StringToValue(value))
+            
+            ConfigValues[index] = self:StringToValue(value)
+        end
+    end
+end
+
+function Config:SaveConfig()
+    local SaveText
+
+    for Index, Value in pairs(ConfigValues) do
+        print(Index, Value)
+        if not SaveText then
+            SaveText = ""
+        else
+            SaveText = SaveText .. "\n"
+        end
+
+        if type(Value) ~= "table" then
+            SaveText = SaveText .. Index .. " = " .. tostring(Value)
+        else
+            local TranslatedTable = self:IterateTableToString(Value)
+            SaveText = SaveText .. Index .. " = " .. TranslatedTable
+        end
+    end
+
+    if SaveText and self.FileName then
+        local ConfigFile = io.open(self.FileName, "w+")
+        if ConfigFile then
+            ConfigFile:write(SaveText)
+            io.close(ConfigFile)
         end
     end
 end
@@ -75,70 +97,6 @@ function Config:IterateTableToString(Table)
     end
 
     return "{"..ReturnValue.."}"
-end
-
-function Config:SaveConfig()
-    local SaveText
-
-    for Index, Value in pairs(self.Config) do
-        print(Index, Value)
-        if not SaveText then
-            SaveText = ""
-        else
-            SaveText = SaveText .. "\n"
-        end
-
-        if type(Value) ~= "table" then
-            SaveText = SaveText .. Index .. " = " .. tostring(Value)
-        else
-            local TranslatedTable = self:IterateTableToString(Value)
-            SaveText = SaveText .. Index .. " = " .. TranslatedTable
-        end
-    end
-
-    if SaveText and self.FileName then
-        local ConfigFile = io.open(self.FileName, "w+")
-        if ConfigFile then
-            ConfigFile:write(SaveText)
-            io.close(ConfigFile)
-        end
-    end
-end
-
-function Config.New()
-    local self = setmetatable({}, Config)
-    
-    local Config = {}
-
-    self.FileName = self:GetConfig()
-    self.Config = setmetatable({}, {
-        __index = Config,
-        __call = function (_, i, v)
-            if not (i and v) then return end
-
-            rawset(Config, i, v)
-        end,
-        __newindex = function(_, i, v)
-            rawset(Config, i, v)
-            print("Updating config! "..i)
-            self:SaveConfig()
-        end,
-    })
-
-    self:LoadConfig()
-
-    print("Save this shit please!")
-
-    Task.Delay(3, function ()
-        print("Config VSYNC set to false!")
-        self.Config.NEWVARIABLE = true
-    end)
-
-    Task.Delay(5, function ()
-        self.Config.NEWVARIABLE = nil
-    end)
-
-    return self
 end
 
 function Config:StringToValue(String)
@@ -177,6 +135,26 @@ function Config:StringToValue(String)
     end
 
     return String
+end
+
+function Config.New()
+    local self = setmetatable({}, Config)
+
+    self.FileName = self:GetConfig()
+    self.Config = self:LoadConfig()
+
+    print("Save this shit please!")
+
+    Task.Delay(3, function ()
+        print("Config VSYNC set to false!")
+        self.NEWVARIABLE = true
+    end)
+
+    Task.Delay(5, function ()
+        self.NEWVARIABLE = nil
+    end)
+
+    return self
 end
 
 return Config.New()
