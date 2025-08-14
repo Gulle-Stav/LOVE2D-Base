@@ -7,6 +7,8 @@ _G.Update = require("lib/Update")
 _G.Utils = require("lib/Utils")
 _G.Task = require("lib/Task")
 
-_G.ConfigController = require("src/ConfigController")
+_G.Vector = require("lib/Vector")
+_G.UDim = require("lib/UDim")
+_G.UDim2 = require("lib/UDim2")
 
-_G.DrawObjects = require("lib/DrawObjects")
+_G.Gui = require("lib/Gui")

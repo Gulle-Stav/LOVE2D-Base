@@ -21,7 +21,7 @@ local GET_VALUE_FROM_FUNCTION = {
 
 local Vector = {}
 Vector.__index = function(Table, Index)
-    if not Table.IsVector then return rawget(Table, Index) end
+    if not rawget(Table, "IsVector") then return rawget(Table, Index) end
 
     assert(OFF_LIMIT_VECTOR_METHODS[Index], "ERR: Use Vector library!")
 
